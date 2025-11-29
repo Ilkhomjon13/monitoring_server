@@ -31,6 +31,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             padding: 20px 30px;
             min-width: 150px;
+            max-width: 200px;
             text-align: center;
             transition: transform 0.3s;
         }
@@ -47,9 +48,31 @@
             font-weight: bold;
             color: #4e73df;
         }
+        .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 12px;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4e73df;
+            transition: width 0.5s;
+        }
         .footer {
             margin-top: 40px;
             color: #6c757d;
+        }
+        #lastUpdated {
+            margin-top: 10px;
+            color: #888;
+        }
+        @media (max-width: 600px) {
+            .votes-container {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -62,6 +85,7 @@
     <!-- Nomzodlar ovozlari shu yerga keladi -->
 </div>
 
+<div id="lastUpdated"></div>
 <div class="footer">Real-time updates via WebSocket</div>
 
 <script>
@@ -70,6 +94,7 @@
     let ws = new WebSocket(`${protocol}://${location.host}/ws/${survey_id}`);
 
     const votesContainer = document.getElementById('votesContainer');
+    const lastUpdated = document.getElementById('lastUpdated');
 
     function randomColor() {
         let r = Math.floor(Math.random()*150+50);
@@ -78,18 +103,61 @@
         return `rgba(${r},${g},${b},0.2)`;
     }
 
+    function getTop3Style(rank) {
+        switch(rank) {
+            case 1: return { background: '#ffd70033', border: '2px solid #ffd700', emoji: '🥇' };
+            case 2: return { background: '#c0c0c033', border: '2px solid #c0c0c0', emoji: '🥈' };
+            case 3: return { background: '#cd7f3233', border: '2px solid #cd7f32', emoji: '🥉' };
+            default: return { background: randomColor(), border: 'none', emoji: '' };
+        }
+    }
+
     function updateVotes(data) {
         votesContainer.innerHTML = '';
-        data.forEach(row => {
+
+        // Ovozlar bo‘yicha sort qilish
+        data.sort((a,b) => b.votes - a.votes);
+
+        const totalVotes = data.reduce((sum, row) => sum + row.votes, 0);
+
+        data.forEach((row, index) => {
             const card = document.createElement('div');
             card.className = 'vote-card';
-            card.style.backgroundColor = randomColor();
+
+            const rank = index + 1;
+            const style = getTop3Style(rank);
+            card.style.backgroundColor = style.background;
+            card.style.border = style.border;
+
+            const percent = totalVotes ? Math.round((row.votes / totalVotes) * 100) : 0;
+
             card.innerHTML = `
-                <div class="candidate-name">${row.name}</div>
-                <div class="vote-count">${row.votes}</div>
+                <div class="candidate-name">${style.emoji} ${row.name}</div>
+                <div class="vote-count">0</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: ${percent}%"></div>
+                </div>
             `;
+
             votesContainer.appendChild(card);
+
+            // Animatsiyali ovoz o‘sishi
+            const voteCountDiv = card.querySelector(".vote-count");
+            let currentVotes = 0;
+            const targetVotes = row.votes;
+            const step = () => {
+                if(currentVotes < targetVotes) {
+                    currentVotes++;
+                    voteCountDiv.innerText = currentVotes;
+                    requestAnimationFrame(step);
+                } else {
+                    voteCountDiv.innerText = targetVotes;
+                }
+            };
+            step();
         });
+
+        lastUpdated.innerText = "Last updated: " + new Date().toLocaleTimeString();
     }
 
     ws.onmessage = (event) => {
