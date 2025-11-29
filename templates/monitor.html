@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Live Voting Monitoring</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(to right, #eef2f3, #ffffff);
-            padding: 30px;
+            padding: 20px;
             text-align: center;
         }
         h2 {
@@ -17,7 +18,7 @@
         h3 {
             color: #495057;
             margin-top: 0;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         .votes-container {
             display: flex;
@@ -29,9 +30,9 @@
             background: #ffffff;
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 20px 30px;
-            min-width: 150px;
-            max-width: 200px;
+            padding: 25px 30px;
+            min-width: 160px;
+            max-width: 220px;
             text-align: center;
             transition: transform 0.3s;
         }
@@ -39,19 +40,19 @@
             transform: translateY(-5px);
         }
         .candidate-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 600;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* emoji va ism orasidagi bo‘shliq */
+            gap: 10px;
         }
         .candidate-name .emoji {
-            font-size: 32px; /* Emoji kattaligi */
+            font-size: 36px;
         }
         .vote-count {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: bold;
             color: #4e73df;
         }
@@ -59,7 +60,7 @@
             background: #e9ecef;
             border-radius: 10px;
             overflow: hidden;
-            height: 12px;
+            height: 14px;
             margin-top: 10px;
         }
         .progress-bar {
@@ -79,6 +80,23 @@
             .votes-container {
                 flex-direction: column;
                 align-items: center;
+            }
+            .vote-card {
+                min-width: 90%;
+                max-width: 90%;
+                padding: 20px;
+            }
+            .candidate-name {
+                font-size: 22px;
+            }
+            .candidate-name .emoji {
+                font-size: 42px;
+            }
+            .vote-count {
+                font-size: 32px;
+            }
+            .progress-bar-container {
+                height: 16px;
             }
         }
     </style>
