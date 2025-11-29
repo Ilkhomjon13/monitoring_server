@@ -34,10 +34,17 @@
             min-width: 160px;
             max-width: 220px;
             text-align: center;
-            transition: transform 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
         .vote-card:hover {
             transform: translateY(-5px);
+        }
+        /* Top 3 kattalashadigan effekt */
+        .vote-card.top1:hover,
+        .vote-card.top2:hover,
+        .vote-card.top3:hover {
+            transform: scale(1.15);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
         }
         .candidate-name {
             font-size: 20px;
@@ -140,7 +147,6 @@
     function updateVotes(data) {
         votesContainer.innerHTML = '';
 
-        // Ovozlar bo‘yicha sort qilish
         data.sort((a,b) => b.votes - a.votes);
 
         const totalVotes = data.reduce((sum, row) => sum + row.votes, 0);
@@ -154,6 +160,10 @@
             card.style.backgroundColor = style.background;
             card.style.border = style.border;
 
+            if(rank <= 3) {
+                card.classList.add(`top${rank}`);
+            }
+
             const percent = totalVotes ? Math.round((row.votes / totalVotes) * 100) : 0;
 
             card.innerHTML = `
@@ -166,7 +176,6 @@
 
             votesContainer.appendChild(card);
 
-            // Animatsiyali ovoz o‘sishi
             const voteCountDiv = card.querySelector(".vote-count");
             let currentVotes = 0;
             const targetVotes = row.votes;
