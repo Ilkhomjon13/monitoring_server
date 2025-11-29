@@ -7,24 +7,26 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            background: linear-gradient(to right, #eef2f3, #ffffff);
             padding: 20px;
             text-align: center;
         }
         h2 {
-            color: #343a40;
+            color: #212529;
+            margin-bottom: 5px;
         }
         h3 {
             color: #495057;
+            margin-top: 0;
+            margin-bottom: 40px;
         }
         canvas {
-            width: 90% !important;
-            max-width: 800px;
-            margin: 30px auto;
+            max-width: 500px;
+            margin: 0 auto;
             background: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            padding: 10px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 20px;
         }
         .footer {
             margin-top: 20px;
@@ -34,45 +36,43 @@
 </head>
 <body>
 
-<h2>📊 Live Voting Monitoring</h2>
+<h2>📊 Live Voting</h2>
 <h3>Survey ID: {{ survey_id }}</h3>
 
 <canvas id="chart"></canvas>
-<div class="footer">Real-time updates powered by WebSocket</div>
+<div class="footer">Real-time updates via WebSocket</div>
 
 <script>
     let survey_id = "{{ survey_id }}";
-
-    // Avtomatik ws protokoli tanlash
     let protocol = location.protocol === 'https:' ? 'wss' : 'ws';
     let ws = new WebSocket(`${protocol}://${location.host}/ws/${survey_id}`);
 
     let ctx = document.getElementById('chart').getContext('2d');
     let chart = new Chart(ctx, {
-        type: 'bar',
+        type: 'doughnut',
         data: {
             labels: [],
             datasets: [{
                 label: 'Votes',
                 data: [],
                 backgroundColor: [],
-                borderColor: [],
-                borderWidth: 1
+                borderColor: '#ffffff',
+                borderWidth: 2
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
-            animation: {
-                duration: 500
-            },
-            scales: {
-                x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                y: { ticks: { color: '#495057', font: { size: 14 } } }
-            },
+            animation: { animateRotate: true, animateScale: true },
             plugins: {
-                legend: { display: false },
-                tooltip: { enabled: true }
+                legend: { position: 'bottom', labels: { font: { size: 14 } } },
+                tooltip: { callbacks: {
+                    label: function(context) {
+                        let total = context.dataset.data.reduce((a,b)=>a+b,0);
+                        let val = context.raw;
+                        let percent = total ? ((val/total)*100).toFixed(1) : 0;
+                        return `${context.label}: ${val} votes (${percent}%)`;
+                    }
+                }}
             }
         }
     });
@@ -81,7 +81,7 @@
         let r = Math.floor(Math.random()*200+50);
         let g = Math.floor(Math.random()*200+50);
         let b = Math.floor(Math.random()*200+50);
-        return `rgba(${r},${g},${b},0.7)`;
+        return `rgba(${r},${g},${b},0.8)`;
     }
 
     ws.onmessage = (event) => {
@@ -90,7 +90,6 @@
             let labels = [];
             let values = [];
             let colors = [];
-
             msg.data.forEach(row => {
                 labels.push(row.name);
                 values.push(row.votes);
@@ -106,7 +105,6 @@
 
     ws.onopen = () => console.log("WebSocket connected ✅");
     ws.onclose = () => console.log("WebSocket disconnected ❌");
-    ws.onerror = (err) => console.error("WebSocket error:", err);
 </script>
 
 </body>
