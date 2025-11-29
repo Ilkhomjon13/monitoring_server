@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 asyncpg
-jinja2
 python-dotenv
+jinja2
