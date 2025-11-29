@@ -1,61 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Live Monitoring</title>
+    <meta charset="utf-8">
+    <title>Live Monitoring - {{ survey.short_title }}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h2>📊 Live Monitoring</h2>
-    <div id="survey-title"></div>
+    <h1>📊 Live Monitoring</h1>
+    <h2>{{ survey.short_title }}</h2>
+    <p>{{ survey.description }}</p>
     <canvas id="votesChart" width="600" height="400"></canvas>
 
     <script>
-        const surveyId = {{ survey_id }};
+        const candidates = {{ candidates|safe }};
+        const labels = candidates.map(c => c.name);
+        const data = candidates.map(c => c.votes);
+
         const ctx = document.getElementById('votesChart').getContext('2d');
-        let chart;
-
-        async function fetchData() {
-            const res = await fetch(`/monitor/data/${surveyId}`);
-            const data = await res.json();
-            if(data.error) {
-                document.getElementById('survey-title').innerText = data.error;
-                return;
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ovozlar soni',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
             }
-            document.getElementById('survey-title').innerText = `Survey: ${data.survey.short_title || data.survey.title || 'Survey'}`;
+        });
 
-            const labels = data.candidates.map(c => c.name);
-            const votes = data.candidates.map(c => c.votes);
-
-            if(chart) {
-                chart.data.labels = labels;
-                chart.data.datasets[0].data = votes;
-                chart.update();
-            } else {
-                chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Votes',
-                            data: votes,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-        }
-
-        // Har 3 sekundda yangilash
-        fetchData();
-        setInterval(fetchData, 3000);
+        // Har 5 soniyada yangilanish
+        setInterval(async () => {
+            const response = await fetch(`/monitor_data?survey_id={{ survey_id }}`);
+            const json = await response.json();
+            chart.data.datasets[0].data = json.map(c => c.votes);
+            chart.update();
+        }, 5000);
     </script>
 </body>
 </html>
