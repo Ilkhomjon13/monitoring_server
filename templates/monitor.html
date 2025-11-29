@@ -1,71 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Live Monitoring</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f4f4;
-            padding: 20px;
-            text-align: center;
-        }
-        canvas {
-            width: 90% !important;
-            max-width: 700px;
-            margin-top: 30px;
-        }
-    </style>
 </head>
 <body>
+    <h2>📊 Live Monitoring</h2>
+    <div id="survey-title"></div>
+    <canvas id="votesChart" width="600" height="400"></canvas>
 
-<h2>📊 Live Monitoring</h2>
-<h3>Survey ID: {{ survey_id }}</h3>
+    <script>
+        const surveyId = {{ survey_id }};
+        const ctx = document.getElementById('votesChart').getContext('2d');
+        let chart;
 
-<canvas id="chart"></canvas>
+        async function fetchData() {
+            const res = await fetch(`/monitor/data/${surveyId}`);
+            const data = await res.json();
+            if(data.error) {
+                document.getElementById('survey-title').innerText = data.error;
+                return;
+            }
+            document.getElementById('survey-title').innerText = `Survey: ${data.survey.short_title || data.survey.title || 'Survey'}`;
 
-<script>
-    let survey_id = "{{ survey_id }}";
-    let ws = new WebSocket(`wss://${location.host}/ws/${survey_id}`);
+            const labels = data.candidates.map(c => c.name);
+            const votes = data.candidates.map(c => c.votes);
 
-    let ctx = document.getElementById('chart').getContext('2d');
-    let chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Votes',
-                data: [],
-                backgroundColor: '#4e73df',
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
+            if(chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = votes;
+                chart.update();
+            } else {
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Votes',
+                            data: votes,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
             }
         }
-    });
 
-    ws.onmessage = (event) => {
-        let msg = JSON.parse(event.data);
-        if (msg.type === "update") {
-            let labels = [];
-            let values = [];
-            msg.data.forEach(row => {
-                labels.push(row.name);
-                values.push(row.votes);
-            });
-
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = values;
-            chart.update();
-        }
-    };
-</script>
-
+        // Har 3 sekundda yangilash
+        fetchData();
+        setInterval(fetchData, 3000);
+    </script>
 </body>
 </html>
