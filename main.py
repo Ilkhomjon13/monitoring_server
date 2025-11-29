@@ -36,3 +36,9 @@ async def monitor_data(survey_id: int):
         "candidates": [dict(c) for c in candidates]
     }
     return data
+
+@app.get("/monitor_data")
+async def monitor_data(survey_id: int):
+    async with pool.acquire() as conn:
+        candidates = await conn.fetch("SELECT name, votes FROM candidates WHERE survey_id=$1 ORDER BY id", survey_id)
+    return [{"name": c["name"], "votes": c["votes"]} for c in candidates]
