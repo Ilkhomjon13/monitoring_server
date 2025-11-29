@@ -3,43 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <title>Live Voting Monitoring</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(to right, #eef2f3, #ffffff);
-            padding: 20px;
+            padding: 30px;
             text-align: center;
         }
         h2 {
             color: #212529;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         h3 {
             color: #495057;
             margin-top: 0;
             margin-bottom: 40px;
         }
-        canvas {
-            max-width: 500px;
-            margin: 0 auto;
+        .votes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .vote-card {
             background: #ffffff;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 20px 30px;
+            min-width: 150px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .vote-card:hover {
+            transform: translateY(-5px);
+        }
+        .candidate-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .vote-count {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4e73df;
         }
         .footer {
-            margin-top: 20px;
+            margin-top: 40px;
             color: #6c757d;
         }
     </style>
 </head>
 <body>
 
-<h2>📊 Live Voting</h2>
+<h2>📊 Live Voting Results</h2>
 <h3>Survey ID: {{ survey_id }}</h3>
 
-<canvas id="chart"></canvas>
+<div class="votes-container" id="votesContainer">
+    <!-- Nomzodlar ovozlari shu yerga keladi -->
+</div>
+
 <div class="footer">Real-time updates via WebSocket</div>
 
 <script>
@@ -47,59 +69,33 @@
     let protocol = location.protocol === 'https:' ? 'wss' : 'ws';
     let ws = new WebSocket(`${protocol}://${location.host}/ws/${survey_id}`);
 
-    let ctx = document.getElementById('chart').getContext('2d');
-    let chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Votes',
-                data: [],
-                backgroundColor: [],
-                borderColor: '#ffffff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            animation: { animateRotate: true, animateScale: true },
-            plugins: {
-                legend: { position: 'bottom', labels: { font: { size: 14 } } },
-                tooltip: { callbacks: {
-                    label: function(context) {
-                        let total = context.dataset.data.reduce((a,b)=>a+b,0);
-                        let val = context.raw;
-                        let percent = total ? ((val/total)*100).toFixed(1) : 0;
-                        return `${context.label}: ${val} votes (${percent}%)`;
-                    }
-                }}
-            }
-        }
-    });
+    const votesContainer = document.getElementById('votesContainer');
 
     function randomColor() {
-        let r = Math.floor(Math.random()*200+50);
-        let g = Math.floor(Math.random()*200+50);
-        let b = Math.floor(Math.random()*200+50);
-        return `rgba(${r},${g},${b},0.8)`;
+        let r = Math.floor(Math.random()*150+50);
+        let g = Math.floor(Math.random()*150+50);
+        let b = Math.floor(Math.random()*150+50);
+        return `rgba(${r},${g},${b},0.2)`;
+    }
+
+    function updateVotes(data) {
+        votesContainer.innerHTML = '';
+        data.forEach(row => {
+            const card = document.createElement('div');
+            card.className = 'vote-card';
+            card.style.backgroundColor = randomColor();
+            card.innerHTML = `
+                <div class="candidate-name">${row.name}</div>
+                <div class="vote-count">${row.votes}</div>
+            `;
+            votesContainer.appendChild(card);
+        });
     }
 
     ws.onmessage = (event) => {
         let msg = JSON.parse(event.data);
         if (msg.type === "update") {
-            let labels = [];
-            let values = [];
-            let colors = [];
-            msg.data.forEach(row => {
-                labels.push(row.name);
-                values.push(row.votes);
-                colors.push(randomColor());
-            });
-
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = values;
-            chart.data.datasets[0].backgroundColor = colors;
-            chart.update();
+            updateVotes(msg.data);
         }
     };
 
