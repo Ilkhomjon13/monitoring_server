@@ -42,6 +42,13 @@
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* emoji va ism orasidagi bo‘shliq */
+        }
+        .candidate-name .emoji {
+            font-size: 32px; /* Emoji kattaligi */
         }
         .vote-count {
             font-size: 28px;
@@ -132,7 +139,7 @@
             const percent = totalVotes ? Math.round((row.votes / totalVotes) * 100) : 0;
 
             card.innerHTML = `
-                <div class="candidate-name">${style.emoji} ${row.name}</div>
+                <div class="candidate-name"><span class="emoji">${style.emoji}</span>${row.name}</div>
                 <div class="vote-count">0</div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" style="width: ${percent}%"></div>
