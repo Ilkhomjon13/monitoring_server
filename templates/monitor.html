@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Live Monitoring</title>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
         body {
             font-family: Arial;
@@ -29,7 +27,8 @@
 
 <script>
     let survey_id = "{{ survey_id }}";
-    let ws = new WebSocket(`wss://${location.host}/ws/${survey_id}`);
+    let protocol = location.protocol === "https:" ? "wss" : "ws";
+    let ws = new WebSocket(`${protocol}://${location.host}/ws/${survey_id}`);
 
     let ctx = document.getElementById('chart').getContext('2d');
     let chart = new Chart(ctx, {
@@ -49,6 +48,10 @@
             }
         }
     });
+
+    ws.onopen = () => console.log("WebSocket connected");
+    ws.onerror = (e) => console.error("WebSocket error", e);
+    ws.onclose = () => console.log("WebSocket closed");
 
     ws.onmessage = (event) => {
         let msg = JSON.parse(event.data);
