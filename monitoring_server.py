@@ -67,7 +67,9 @@ async def send_current_votes(survey_id: int, websocket: WebSocket = None):
         )
 
     data = [{"name": r["name"], "votes": r["votes"]} for r in rows]
-
+    
+    print(f"send_current_votes: survey_id={survey_id}, data={data}")  # Bu qatorni qo‘shing
+    
     message = {"type": "update", "data": data}
 
     # Bitta WSga yuborish
