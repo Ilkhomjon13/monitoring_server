@@ -1,74 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Live Monitoring</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f4f4;
-            padding: 20px;
-            text-align: center;
-        }
-        canvas {
-            width: 90% !important;
-            max-width: 700px;
-            margin-top: 30px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Live Voting Monitor</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        padding: 20px;
+        text-align: center;
+        color: #343a40;
+    }
+    h2 {
+        font-size: 2.2em;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+    h3 {
+        font-size: 1.2em;
+        color: #6c757d;
+        margin-bottom: 30px;
+    }
+    canvas {
+        width: 90% !important;
+        max-width: 800px;
+        margin: auto;
+        background: #ffffffcc;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .candidate-cards {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    .card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px 20px;
+        min-width: 120px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card h4 {
+        margin: 0 0 5px 0;
+        font-size: 1.1em;
+        color: #495057;
+    }
+    .card p {
+        margin: 0;
+        font-size: 1em;
+        color: #6c757d;
+    }
+</style>
 </head>
 <body>
 
-<h2>📊 Live Monitoring</h2>
+<h2>📊 Live Voting Monitor</h2>
 <h3>Survey ID: {{ survey_id }}</h3>
 
 <canvas id="chart"></canvas>
 
+<div class="candidate-cards" id="candidateCards"></div>
+
 <script>
-    let survey_id = "{{ survey_id }}";
-    let protocol = location.protocol === "https:" ? "wss" : "ws";
-    let ws = new WebSocket(`${protocol}://${location.host}/ws/${survey_id}`);
+let survey_id = "{{ survey_id }}";
+let ws = new WebSocket(`ws://${location.host}/ws/${survey_id}`);
 
-    let ctx = document.getElementById('chart').getContext('2d');
-    let chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Votes',
-                data: [],
-                backgroundColor: '#4e73df',
-            }]
+let ctx = document.getElementById('chart').getContext('2d');
+let chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Votes',
+            data: [],
+            backgroundColor: [
+                'rgba(78, 115, 223, 0.7)',
+                'rgba(28, 200, 138, 0.7)',
+                'rgba(54, 185, 204, 0.7)',
+                'rgba(246, 194, 62, 0.7)',
+                'rgba(231, 74, 59, 0.7)'
+            ],
+            borderColor: [
+                'rgba(78, 115, 223, 1)',
+                'rgba(28, 200, 138, 1)',
+                'rgba(54, 185, 204, 1)',
+                'rgba(246, 194, 62, 1)',
+                'rgba(231, 74, 59, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
         },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
-            }
+        scales: {
+            y: { beginAtZero: true }
         }
-    });
+    }
+});
 
-    ws.onopen = () => console.log("WebSocket connected");
-    ws.onerror = (e) => console.error("WebSocket error", e);
-    ws.onclose = () => console.log("WebSocket closed");
+let cardsContainer = document.getElementById('candidateCards');
 
-    ws.onmessage = (event) => {
-        console.log("Received WS message:", event.data);  // qo‘shildi
-        let msg = JSON.parse(event.data);
-        if (msg.type === "update") {
-            let labels = [];
-            let values = [];
-            msg.data.forEach(row => {
-                labels.push(row.name);
-                values.push(row.votes);
-            });
+ws.onmessage = (event) => {
+    let msg = JSON.parse(event.data);
+    if (msg.type === "update") {
+        let labels = [];
+        let values = [];
+        cardsContainer.innerHTML = ""; // Clear old cards
 
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = values;
-            chart.update();
-        }
-    };
+        msg.data.forEach((row, idx) => {
+            labels.push(row.name);
+            values.push(row.votes);
+
+            // Add card
+            let card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<h4>${row.name}</h4><p>Votes: ${row.votes}</p>`;
+            cardsContainer.appendChild(card);
+        });
+
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.update();
+    }
+};
 </script>
 
 </body>
